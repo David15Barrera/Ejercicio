@@ -13,18 +13,19 @@ package com.mycompany.ejerciciojflex;
 %int
 
 %state PALABRA
-(a|e|i|o|u|A|E|I|O|U)
-[a-zA-Z]|[0-9] 
+ 
 espacio=[\s,\t,\r,\n]+
 
 %{
-    private StringBuffer Palabra = new StringBuffer();
+    private StringBuffer bufferPalabra = new StringBuffer();
 
+    private String[] palabrasSinVocal = new String[0];
     private String[] palabrasUnaVocal = new String[0];
     private String[] palabrasDosVocales = new String[0];
     private String[] palabrasTresVocales = new String[0];
     private String[] palabrasCuatroVocales = new String[0];
     private String[] palabrasCincoVocales = new String[0];
+    private String[] palabrasMasVocales = new String[0];
     
     private int[][] posicionesDigitos = new int[0][2];
 
@@ -32,7 +33,7 @@ espacio=[\s,\t,\r,\n]+
     
     private void iniciarPalabra(){
         yybegin(PALABRA);
-        Palabra.append(yytext());
+        bufferPalabra.append(yytext());
     }
     
     private void terminarPalabra(){
@@ -41,7 +42,34 @@ espacio=[\s,\t,\r,\n]+
     }
     
     private void limpiarBuffer(){
-        Palabra.delete(0, bufferPalabra.length());
+        bufferPalabra.delete(0, bufferPalabra.length());
+    }
+    
+    private void agregarPalabra(){
+        switch(countVocalesPalabra){
+            case 0:
+                palabrasSinVocal = agregarPalabra(bufferPalabra.toString(), palabrasSinVocal);
+            break;
+            case 1:
+                palabrasUnaVocal = agregarPalabra(bufferPalabra.toString(), palabrasUnaVocal);
+            break;
+            case 2:
+                palabrasDosVocales = agregarPalabra(bufferPalabra.toString(), palabrasDosVocales);
+            break;
+            case 3:
+                palabrasTresVocales = agregarPalabra(bufferPalabra.toString(), palabrasTresVocales);
+            break;
+            case 4:
+                palabrasCuatroVocales = agregarPalabra(bufferPalabra.toString(), palabrasCuatroVocales);
+            break;
+            case 5:
+                palabrasCincoVocales = agregarPalabra(bufferPalabra.toString(), palabrasCincoVocales);
+            break;
+            default:
+                palabrasMasVocales = agregarPalabra(bufferPalabra.toString(), palabrasMasVocales);
+            break;
+        }
+        countVocalesPalabra = 0;
     }
     
     private String[] agregarPalabra(String palabra, String[] arreglo){
@@ -64,6 +92,10 @@ espacio=[\s,\t,\r,\n]+
         posicionesDigitos = temp;
     }
 
+    public String[] getSinVocal(){
+        return palabrasSinVocal;
+    }
+
     public String[] getUnaVocal(){
         return palabrasUnaVocal;
     }
@@ -83,6 +115,10 @@ espacio=[\s,\t,\r,\n]+
     public String[] getCincoVocales(){
         return palabrasCincoVocales;
     }
+
+    public String[] getMasVocales(){
+        return palabrasMasVocales;
+    }
     
     public int[][] getPosicionesDigitos(){
         return posicionesDigitos;
@@ -97,11 +133,24 @@ espacio=[\s,\t,\r,\n]+
 
 /*tercer seccion: reglase lexicas*/
 
-    (a|e|i|o|u|A|E|I|O|U) {Palabra.append(yytext());countVocalesPalabra++;}
+<PALABRA> {
+    (a|e|i|o|u|A|E|I|O|U) {bufferPalabra.append(yytext());countVocalesPalabra++;}
+    [0-9] {bufferPalabra.append(yytext());agregarPosicionDigito(yyline+1, yycolumn+1);}
+    ([a-zA-Z]|[0-9]) {bufferPalabra.append(yytext());}
+    espacio|[^] {yybegin(YYINITIAL);terminarPalabra();}
+    /*
+    [^] {bufferPalabra.append(yytext());}
+    */
+}
+
+<YYINITIAL> {
+    /*
+    */
+    (a|e|i|o|u|A|E|I|O|U) {iniciarPalabra();countVocalesPalabra++;}
+    [0-9] {iniciarPalabra();agregarPosicionDigito(yyline+1, yycolumn+1);}
     ([a-zA-Z]|[0-9]) {iniciarPalabra();}
     {espacio} {agregarPalabra();}
-
-
-    [^] {}
+    [^] {/*Ignorar*/}
+}
  
 
